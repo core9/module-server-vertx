@@ -13,6 +13,7 @@ import io.core9.plugin.template.closure.ClosureTemplateEngine;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +25,14 @@ import net.xeoh.plugins.base.annotations.injections.InjectPlugin;
 
 import org.apache.commons.lang3.ClassUtils;
 
+import com.google.common.collect.ObjectArrays;
 import com.google.common.io.CharStreams;
 
 @PluginImplementation
 public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 	
 	private static final String VHOST_COLLECTION = "virtualhosts";
+	private VirtualHost[] vhosts;
 
 	@InjectPlugin
 	private MongoDatabase database;
@@ -50,24 +53,34 @@ public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public VirtualHost[] getVirtualHosts() {
-		
-		List<Map<String,Object>> vhosts = null;
+	public VirtualHost[] refreshVirtualHosts() {
+		Map<String, VirtualHost> currentHosts = getVirtualHostsByHostname();
 		try {
-			vhosts = database.getMultipleResults(database.getMasterDBName(), VHOST_COLLECTION, new HashMap<String,Object>());
+			List<Map<String,Object>> vhosts = database.getMultipleResults(database.getMasterDBName(), VHOST_COLLECTION, new HashMap<String,Object>());
+			List<VirtualHost> newHosts = new ArrayList<VirtualHost>();
+			for(Map<String, Object> vhostMap : vhosts) {
+				if(!currentHosts.containsKey(vhostMap.get("hostname"))) {
+					VirtualHost vhost = new VirtualHost((String) vhostMap.get("hostname"));
+					vhost.setContext((Map<String, Object>) vhostMap.get("context"));
+					vhost.putContext("bindings", new CopyOnWriteArrayList<Binding>());
+					newHosts.add(vhost);
+				}
+			}
+			VirtualHost[] newHostArray = newHosts.toArray(new VirtualHost[newHosts.size()]);
+			setVirtualHostsOnPlugins(newHostArray);
+			this.vhosts = ObjectArrays.concat(this.vhosts, newHostArray, VirtualHost.class);
         } catch (Exception e) {
         	e.printStackTrace();
         }
-		
-		VirtualHost[] vhostArray = new VirtualHost[vhosts.size()];
-		for(int i = 0; i < vhosts.size(); i++) {
-			Map<String,Object> vhostMap = vhosts.get(i);
-			VirtualHost vhost = new VirtualHost((String) vhostMap.get("hostname"));
-			vhost.setContext((Map<String, Object>) vhostMap.get("context"));
-			vhost.putContext("bindings", new CopyOnWriteArrayList<Binding>());
-			vhostArray[i] = vhost;
+		return this.vhosts;
+	}
+	
+	@Override
+	public VirtualHost[] getVirtualHosts() {
+		if(this.vhosts == null) {
+			this.vhosts = new VirtualHost[0];
 		}
-		return vhostArray;
+		return this.vhosts;
 	}
 
 	@Override
@@ -87,7 +100,7 @@ public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		VirtualHost[] vhosts = getVirtualHosts();
+		VirtualHost[] vhosts = refreshVirtualHosts();
 		for(VirtualHost vhost : vhosts) {
 			try {
 				createVirtualHostDatabase(vhost);

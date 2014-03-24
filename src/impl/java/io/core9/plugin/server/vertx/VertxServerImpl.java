@@ -77,7 +77,7 @@ public class VertxServerImpl implements VertxServer {
 	}
 
 	@Override
-	public void process(VirtualHost[] vhosts) {
+	public void execute() {
 		ResponseImpl.setTemplateEngine(engine);		
 		Vertx vertx = VertxFactory.newVertx(8113, "localhost");
 		HandlerProcessor.setHandlers(new ServerHandler[]{
