@@ -175,26 +175,21 @@ public class ResponseImpl implements Response, HttpServerResponse {
 
 	@Override
 	public void end(String chunk) {
-
-		try {
-			response.end(chunk);
-		} catch (Exception e) {
-			// TODO: handle exception
-			System.out.println("java.lang.IllegalStateException: Response has already been written"
-			        + this.getClass().getCanonicalName() + " end() ");
-		}
-
+		processHeaders();
+		response.end(chunk);
 		this.ended = true;
 	}
 
 	@Override
 	public void end(String chunk, String enc) {
+		processHeaders();
 		response.end(chunk, enc);
 		this.ended = true;
 	}
 
 	@Override
 	public void end(Buffer chunk) {
+		processHeaders();
 		response.end(chunk);
 		this.ended = true;
 	}
@@ -202,33 +197,15 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	@Override
 	public void end() {
 		if (!this.ended) {
-			if (this.cookies != null) {
-				// TODO Fix
-				List<io.netty.handler.codec.http.Cookie> nettyCookies = new ArrayList<io.netty.handler.codec.http.Cookie>();
-				for (CookieImpl cookie : this.cookies) {
-					nettyCookies.add((io.netty.handler.codec.http.Cookie) cookie);
-				}
-				response.putHeader("set-cookie", ServerCookieEncoder.encode(nettyCookies));
-			}
-			// FIXME
-			if (this.template != null && templateEngine != null) {
+			processHeaders();
+			if(this.template != null) {
+				String result = "";
 				try {
-					String contentType = response.headers().get("Content-Type");
-					if (contentType == null) {
-						String content = templateEngine.render(template, values);
-						// if render fails then don't set content type
-						response.headers().add("Content-Type", "text/html");
-						response.end(content);
-					}
-					
+					result = processTemplate();
 				} catch (Exception e) {
-					response.headers().add("Content-Type", "text/plain");
-					response.end(e.getMessage());
+					result = e.getMessage();
 				}
-			} else if (values.containsKey("filename")) {
-				response.sendFile((String) values.get("filename"));
-			} else if (values.containsKey("bin")) {
-				sendBinary((byte[]) values.get("bin"));
+				response.end(result);
 			} else if (template == null && values.size() > 0) {
 				sendJsonMap(values);
 			} else {
@@ -240,13 +217,17 @@ public class ResponseImpl implements Response, HttpServerResponse {
 
 	@Override
 	public ResponseImpl sendFile(String filename) {
+		processHeaders();
 		response.sendFile(filename);
+		this.ended = true;
 		return this;
 	}
 
 	@Override
 	public HttpServerResponse sendFile(String filename, String notFoundFile) {
+		processHeaders();
 		response.sendFile(filename, notFoundFile);
+		this.ended = true;
 		return this;
 	}
 
@@ -268,6 +249,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 
 	@Override
 	public ResponseImpl sendBinary(byte[] bin) {
+		processHeaders();
 		response.end(new Buffer(bin));
 		this.ended = true;
 		return this;
@@ -276,6 +258,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void sendJsonArray(List<? extends Object> list) {
+		processHeaders();
 		response.headers().add("Content-Type", "application/json");
 		response.end(new JsonArray((List<Object>) list).encodePrettily());
 		this.ended = true;
@@ -283,6 +266,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 
 	@Override
 	public void sendJsonArray(Set<? extends Object> list) {
+		processHeaders();
 		response.headers().add("Content-Type", "application/json");
 		response.end(new JsonArray(list.toArray()).encodePrettily());
 		this.ended = true;
@@ -290,6 +274,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 
 	@Override
 	public void sendJsonMap(Map<String, Object> map) {
+		processHeaders();
 		response.headers().add("Content-Type", "application/json");
 		response.end(new JsonObject(map).toString());
 		this.ended = true;
@@ -297,6 +282,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	
 	@Override
 	public void sendRedirect(int status, String url) {
+		processHeaders();
 		response.setStatusCode(status);
 		response.headers().add("Content-Type", "plain/text");
 		response.headers().add("Location", url);
@@ -312,5 +298,27 @@ public class ResponseImpl implements Response, HttpServerResponse {
 		}
 		cookies.add(c);
 		return this;
+	}
+	
+	/**
+	 * Process the headers
+	 */
+	private void processHeaders() {
+		if (this.cookies != null) {
+			List<io.netty.handler.codec.http.Cookie> nettyCookies = new ArrayList<io.netty.handler.codec.http.Cookie>();
+			for (CookieImpl cookie : this.cookies) {
+				nettyCookies.add((io.netty.handler.codec.http.Cookie) cookie);
+			}
+			response.putHeader("set-cookie", ServerCookieEncoder.encode(nettyCookies));
+		}
+	}
+	
+	private String processTemplate() throws Exception {
+		String contentType = response.headers().get("Content-Type");
+		if(contentType == null) {
+			// Default to text/html content type
+			response.headers().add("Content-Type", "text/html");
+		}
+		return templateEngine.render(template, values);
 	}
 }
