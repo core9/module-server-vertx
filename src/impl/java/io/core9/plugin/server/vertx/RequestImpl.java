@@ -309,6 +309,7 @@ public class RequestImpl implements Request, HttpServerRequest {
 
 	public void setVirtualHost(VirtualHost vhost) {
 		this.vhost = vhost;
+		this.response.setVirtualHost(vhost);
 	}
 
 	@Override

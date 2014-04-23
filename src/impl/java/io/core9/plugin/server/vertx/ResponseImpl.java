@@ -1,6 +1,7 @@
 package io.core9.plugin.server.vertx;
 
 import io.core9.plugin.server.Cookie;
+import io.core9.plugin.server.VirtualHost;
 import io.core9.plugin.server.request.Response;
 import io.core9.plugin.template.TemplateEngine;
 import io.netty.handler.codec.http.ServerCookieEncoder;
@@ -20,6 +21,7 @@ import org.vertx.java.core.json.JsonObject;
 
 public class ResponseImpl implements Response, HttpServerResponse {
 	// the original request
+	private VirtualHost vhost;
 	private final HttpServerResponse response;
 	private static TemplateEngine<String> templateEngine;
 
@@ -66,6 +68,11 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	@Override
 	public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
 		response.setWriteQueueMaxSize(maxSize);
+		return this;
+	}
+	
+	public ResponseImpl setVirtualHost(VirtualHost vhost) {
+		this.vhost = vhost;
 		return this;
 	}
 
@@ -319,6 +326,6 @@ public class ResponseImpl implements Response, HttpServerResponse {
 			// Default to text/html content type
 			response.headers().add("Content-Type", "text/html");
 		}
-		return templateEngine.render(template, values);
+		return templateEngine.render(vhost, template, values);
 	}
 }
