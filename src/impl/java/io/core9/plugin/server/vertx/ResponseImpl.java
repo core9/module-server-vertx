@@ -200,6 +200,11 @@ public class ResponseImpl implements Response, HttpServerResponse {
 		response.end(chunk);
 		this.ended = true;
 	}
+	
+	@Override
+	public boolean isEnded() {
+		return ended;
+	}
 
 	@Override
 	public void end() {

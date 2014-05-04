@@ -85,7 +85,7 @@ public class VertxServerImpl implements VertxServer {
 								new SessionHandler(HMAC),
 								new BodyHandler(),
 								new FrameworkHandler(),
-								new EndHandler()
+								new EndHandler(manager)
 								});
 		
 		for(int i = 0; i < 10; i++) {

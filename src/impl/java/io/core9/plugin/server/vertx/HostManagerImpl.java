@@ -32,6 +32,8 @@ import com.google.common.io.CharStreams;
 public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 	
 	private static final String VHOST_COLLECTION = "virtualhosts";
+	private static final String CONFIGURATION_COLLECTION = "configuration";
+	
 	private VirtualHost[] vhosts;
 
 	@InjectPlugin
@@ -182,5 +184,26 @@ public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 		context.put("dbhost", (String) body.get("dbhost"));
 		vhost.setContext(context);
 		return vhost;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public String getURLAlias(VirtualHost vhost, String path) {
+		Map<String,Object> doc = new HashMap<String, Object>();
+		doc.put("from", path);
+		Map<String,Object> elemMatch = new HashMap<String, Object>();
+		elemMatch.put("$elemMatch", doc);
+		Map<String,Object> fields = new HashMap<String, Object>();
+		fields.put("aliases", elemMatch);
+		
+		Map<String,Object> query = new HashMap<String, Object>();
+		query.put("aliases.from", path);
+		query.put("name", "aliases");
+		
+		Map<String,Object> result = database.getSingleResult((String) vhost.getContext("database"), vhost.getContext("prefix") + CONFIGURATION_COLLECTION, query, fields);
+		if(result != null && result.get("aliases") != null) {
+			return (String) ((List<Map<String,Object>>) result.get("aliases")).get(0).get("to");
+		}
+		return null;
 	}
 }
