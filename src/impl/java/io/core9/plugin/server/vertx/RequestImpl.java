@@ -32,12 +32,8 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
 
 public class RequestImpl implements Request, HttpServerRequest {
-	private static HashMap<String, String> mappings = new HashMap<String, String>();
 	private static HashMap<String, Method> methods = new HashMap<String, Method>();
 	{
-		// TODO Move to DB (load on boot/on request)
-		mappings.put("/robots.txt", "/static/robots.txt");
-
 		methods.put("GET", Method.GET);
 		methods.put("PUT", Method.PUT);
 		methods.put("POST", Method.POST);
@@ -70,24 +66,13 @@ public class RequestImpl implements Request, HttpServerRequest {
 	public RequestImpl(HttpServerRequest request) {
 		this.request = request;
 		this.context = new HashMap<String, Object>();
-		this.path = getUrlMapping(request.path());
+		this.path = request.path();
 		this.params = new HashMap<String, Object>();
 		for (Map.Entry<String, String> entry : request.params()) {
 			this.params.put(entry.getKey(), entry.getValue());
 		}
 		this.type = methods.get(request.method());
 		this.response = new ResponseImpl(request.response());
-	}
-
-	/**
-	 * Get a mapping for a url
-	 * 
-	 * @param path
-	 * @return
-	 */
-	private static String getUrlMapping(String path) {
-		String result = mappings.get(path);
-		return result == null ? path : result;
 	}
 
 	@Override
