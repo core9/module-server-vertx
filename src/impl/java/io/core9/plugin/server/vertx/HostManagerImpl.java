@@ -66,6 +66,7 @@ public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 					vhost.setContext((Map<String, Object>) vhostMap.get("context"));
 					vhost.putContext("bindings", new CopyOnWriteArrayList<Binding>());
 					newHosts.add(vhost);
+					createVirtualHostDatabase(vhost);
 				}
 			}
 			VirtualHost[] newHostArray = newHosts.toArray(new VirtualHost[newHosts.size()]);
