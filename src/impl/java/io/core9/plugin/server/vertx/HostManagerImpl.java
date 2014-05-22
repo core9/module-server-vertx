@@ -48,7 +48,9 @@ public class HostManagerImpl extends CoreBootStrategy implements HostManager {
 		Map<String, Object> item = new HashMap<String,Object>();
 		item.put("hostname", vhost.getHostname());
 		item.put("context", vhost.getContext());
-		database.upsert(database.getMasterDBName(), VHOST_COLLECTION, item, item);
+		Map<String, Object> document = new HashMap<String,Object>();
+		document.put("$set", item);
+		database.upsert(database.getMasterDBName(), VHOST_COLLECTION, document, new HashMap<String,Object>());
 		vhost.putContext("bindings", new CopyOnWriteArrayList<Binding>());
 		return this;
 	}
