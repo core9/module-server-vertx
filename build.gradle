@@ -24,5 +24,6 @@ dependencies {
 	apiCompile 'io.core9:module-server-api:+'
 	implCompile 'io.core9:module-database-mongodb-api:+'
 	implCompile 'io.core9:module-template-engine-closure-api:+'
-	implCompile 'io.vertx:vertx-core:2.0.2-final'
+	//implCompile 'io.vertx:vertx-core:2.0.2-final'
+	implCompile "io.vertx:vertx-core:2.1RC3"
 }

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
@@ -332,5 +333,45 @@ public class ResponseImpl implements Response, HttpServerResponse {
 			response.headers().add("Content-Type", "text/html");
 		}
 		return templateEngine.render(vhost, template, values);
+	}
+
+	@Override
+	public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HttpServerResponse putHeader(CharSequence name,
+			Iterable<CharSequence> values) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HttpServerResponse putTrailer(CharSequence name,
+			Iterable<CharSequence> value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HttpServerResponse sendFile(String filename,
+			Handler<AsyncResult<Void>> resultHandler) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HttpServerResponse sendFile(String filename, String notFoundFile,
+			Handler<AsyncResult<Void>> resultHandler) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -337,4 +337,10 @@ public class RequestImpl implements Request, HttpServerRequest {
 		return request.headers().get("Host");
 	}
 
+	@Override
+	public InetSocketAddress localAddress() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
