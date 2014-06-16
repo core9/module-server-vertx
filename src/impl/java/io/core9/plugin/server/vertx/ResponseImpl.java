@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -268,12 +272,11 @@ public class ResponseImpl implements Response, HttpServerResponse {
 		return this;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void sendJsonArray(List<? extends Object> list) {
 		processHeaders();
 		response.headers().add("Content-Type", "application/json");
-		response.end(new JsonArray((List<Object>) list).encodePrettily());
+		response.end(JSONArray.toJSONString(list));
 		this.ended = true;
 	}
 
@@ -281,7 +284,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	public void sendJsonArray(Set<? extends Object> list) {
 		processHeaders();
 		response.headers().add("Content-Type", "application/json");
-		response.end(new JsonArray(list.toArray()).encodePrettily());
+		response.end(JSONArray.toJSONString(new ArrayList<Object>(list)));
 		this.ended = true;
 	}
 
@@ -289,7 +292,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	public void sendJsonMap(Map<String, Object> map) {
 		processHeaders();
 		response.headers().add("Content-Type", "application/json");
-		response.end(new JsonObject(map).toString());
+		response.end(JSONObject.toJSONString(map));
 		this.ended = true;
 	}
 	
