@@ -29,6 +29,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 
 	private String template;
 	private Map<String, Object> values;
+	private Map<String, Object> globals;
 	private boolean ended = false;
 	private List<CookieImpl> cookies;
 
@@ -53,18 +54,15 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	}
 
 	@Override
-	public void addValues(Map<String, Object> values) {
+	public Response addValues(Map<String, Object> values) {
 		this.values.putAll(values);
+		return this;
 	}
 
 	@Override
-	public void addValue(String key, Object value) {
+	public Response addValue(String key, Object value) {
 		this.values.put(key, value);
-	}
-
-	public ResponseImpl(HttpServerResponse response) {
-		this.response = response;
-		values = new HashMap<String, Object>();
+		return this;
 	}
 
 	@Override
@@ -75,6 +73,7 @@ public class ResponseImpl implements Response, HttpServerResponse {
 	
 	public ResponseImpl setVirtualHost(VirtualHost vhost) {
 		this.vhost = vhost;
+		this.addGlobal("hostname", vhost.getHostname());
 		return this;
 	}
 
@@ -131,7 +130,6 @@ public class ResponseImpl implements Response, HttpServerResponse {
 			System.out.println("java.lang.IllegalStateException: Response has already been written"
 			        + this.getClass().getCanonicalName() + " : putHeader");
 		}
-
 		return this;
 	}
 
@@ -332,46 +330,61 @@ public class ResponseImpl implements Response, HttpServerResponse {
 			// Default to text/html content type
 			response.headers().add("Content-Type", "text/html");
 		}
-		return templateEngine.render(vhost, template, values);
+		return templateEngine.render(vhost, template, values, globals);
 	}
 
 	@Override
 	public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-		// TODO Auto-generated method stub
-		return null;
+		response.putHeader(name, value);
+		return this;
 	}
 
 	@Override
-	public HttpServerResponse putHeader(CharSequence name,
-			Iterable<CharSequence> values) {
-		// TODO Auto-generated method stub
-		return null;
+	public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
+		response.putHeader(name, values);
+		return this;
 	}
 
 	@Override
 	public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
-		// TODO Auto-generated method stub
-		return null;
+		response.putTrailer(name, value);
+		return this;
 	}
 
 	@Override
-	public HttpServerResponse putTrailer(CharSequence name,
-			Iterable<CharSequence> value) {
-		// TODO Auto-generated method stub
-		return null;
+	public HttpServerResponse putTrailer(CharSequence name,	Iterable<CharSequence> values) {
+		response.putTrailer(name, values);
+		return this;
 	}
 
 	@Override
-	public HttpServerResponse sendFile(String filename,
-			Handler<AsyncResult<Void>> resultHandler) {
-		// TODO Auto-generated method stub
-		return null;
+	public HttpServerResponse sendFile(String filename,	Handler<AsyncResult<Void>> resultHandler) {
+		response.sendFile(filename, resultHandler);
+		return this;
 	}
 
 	@Override
-	public HttpServerResponse sendFile(String filename, String notFoundFile,
-			Handler<AsyncResult<Void>> resultHandler) {
-		// TODO Auto-generated method stub
-		return null;
+	public HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler) {
+		response.sendFile(filename, notFoundFile, resultHandler);
+		return this;
+	}
+
+	@Override
+	public Response addGlobal(String key, Object value) {
+		if(this.globals == null) {
+			this.globals = new HashMap<String,Object>();
+		}
+		this.globals.put(key, value);
+		return this;
+	}
+
+	@Override
+	public Map<String, Object> getGlobals() {
+		return this.globals;
+	}
+	
+	public ResponseImpl(HttpServerResponse response) {
+		this.response = response;
+		this.values = new HashMap<String, Object>();
 	}
 }
