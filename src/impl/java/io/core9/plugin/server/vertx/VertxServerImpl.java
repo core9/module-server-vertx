@@ -2,6 +2,7 @@ package io.core9.plugin.server.vertx;
 
 import io.core9.plugin.server.Cookie;
 import io.core9.plugin.server.HostManager;
+import io.core9.plugin.server.Server;
 import io.core9.plugin.server.VirtualHost;
 import io.core9.plugin.server.handler.Middleware;
 import io.core9.plugin.server.registry.Binding;
@@ -29,7 +30,7 @@ import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.http.HttpServerRequest;
 
 @PluginImplementation
-public class VertxServerImpl implements VertxServer {
+public class VertxServerImpl implements Server {
 	
 	@InjectPlugin
 	private ClosureTemplateEngine engine;

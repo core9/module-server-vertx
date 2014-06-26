@@ -11,7 +11,6 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,15 +20,21 @@ import java.util.Set;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServerFileUpload;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpVersion;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
+
+import rx.Observable;
+import rx.Observable.OnSubscribe;
+import rx.schedulers.Schedulers;
 
 public class RequestImpl implements Request, HttpServerRequest {
 	private static HashMap<String, Method> methods = new HashMap<String, Method>();
@@ -50,7 +55,11 @@ public class RequestImpl implements Request, HttpServerRequest {
 	private Map<String, Object> context;
 	private Map<String, Object> params;
 	private boolean expectMultiPartCalled;
-	private String body;
+	private String strBody;
+	private Observable<String> body = Observable.create((OnSubscribe<String>) subscriber -> {
+		subscriber.onNext(strBody);
+		subscriber.onCompleted();
+	}).subscribeOn(Schedulers.io());
 	private List<Cookie> cookies;
 
 	@Override
@@ -270,26 +279,43 @@ public class RequestImpl implements Request, HttpServerRequest {
 	}
 
 	public void setBody(String body) {
-		this.body = body;
+		this.strBody = body;
 	}
 
 	@Override
-	public String getBody() {
+	public Observable<String> getBody() {
 		return body;
 	}
 
 	@Override
-	public List<Object> getBodyAsList() {
-		return Arrays.asList(new JsonArray(body).toArray());
+	public Observable<List<Object>> getBodyAsList() {
+		return Observable.create((OnSubscribe<List<Object>>) subscriber -> {
+			this.getBody().subscribe((value) -> {
+				try {
+					subscriber.onNext((JSONArray) JSONValue.parse(value));
+				} catch (Exception e) {
+					subscriber.onError(e);
+				}
+			});
+		}).subscribeOn(Schedulers.io());
 	}
 
 	@Override
-	public Map<String, Object> getBodyAsMap() {
-		if(this.context.containsKey("is_json_object") && (boolean) this.context.get("is_json_object")) {
-			return new JsonObject(body).toMap();
-		} else {
-			return splitQuery(body);
-		}
+	public Observable<Map<String, Object>> getBodyAsMap() {
+		return Observable.create((OnSubscribe<Map<String,Object>>) subscriber -> {
+			this.getBody().subscribe((value) -> {
+				try {
+					if(this.context.containsKey("is_json_object") && (boolean) this.context.get("is_json_object")) {
+						subscriber.onNext(((JSONObject) JSONValue.parse(value)));
+					} else {
+						subscriber.onNext(splitQuery(value));
+					}
+					subscriber.onCompleted();
+				} catch (Exception e) {
+					subscriber.onError(e);
+				}
+			});
+		}).subscribeOn(Schedulers.io());
 	}
 
 	public void setVirtualHost(VirtualHost vhost) {
