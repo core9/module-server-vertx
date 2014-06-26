@@ -17,6 +17,7 @@ import io.core9.plugin.server.vertx.handler.VHostHandler;
 import io.core9.plugin.template.closure.ClosureTemplateEngine;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.crypto.Mac;
 
@@ -53,7 +54,12 @@ public class VertxServerImpl implements Server {
 	@Override
 	public void use(VirtualHost vhost, String pattern, Middleware middleware) {
 		LOG.info("Registring: " + pattern + " on vhost: " + vhost.getHostname());
-		BINDINGS.addPattern((List<Binding>) vhost.getContext("bindings"), pattern, middleware);
+		List<Binding> bindings = (List<Binding>) vhost.getContext("bindings");
+		if(bindings == null) {
+			bindings = new CopyOnWriteArrayList<Binding>();
+			vhost.putContext("bindings", bindings);
+		}
+		BINDINGS.addPattern(bindings, pattern, middleware);
 	}
 
 	@Override

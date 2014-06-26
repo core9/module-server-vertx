@@ -77,6 +77,7 @@ public class BindingsRegistry {
 	 * @param pattern
 	 */
 	public void removePattern(List<Binding> bindings, String pattern) {
+		if(bindings == null) return;
 		for(Binding binding: bindings) {
 			if (binding.path.equals(pattern)) {
 				bindings.remove(binding);
